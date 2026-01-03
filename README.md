@@ -1,6 +1,7 @@
 # Listonic Shopping Lists for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=omelhus&repository=hass-listonic&category=integration)
 
 A Home Assistant custom component that integrates with [Listonic](https://listonic.com) shopping list app.
 
@@ -16,6 +17,8 @@ A Home Assistant custom component that integrates with [Listonic](https://liston
 ## Installation
 
 ### HACS (Recommended)
+
+Click the button above or:
 
 1. Open HACS in Home Assistant
 2. Click on "Integrations"
