@@ -13,6 +13,7 @@ from homeassistant.components.todo import (
     TodoListEntityFeature,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -68,11 +69,14 @@ async def async_setup_entry(
 
     async_add_entities(entities)
 
-    # Register listener for new lists
+    # Register listener for new and deleted lists
     @callback
-    def async_check_new_lists() -> None:
-        """Check for new lists and add entities."""
-        new_list_ids = set(coordinator.data.keys()) - known_list_ids
+    def async_check_lists() -> None:
+        """Check for new and deleted lists."""
+        current_list_ids = set(coordinator.data.keys())
+
+        # Handle new lists
+        new_list_ids = current_list_ids - known_list_ids
         if new_list_ids:
             known_list_ids.update(new_list_ids)
             async_add_entities(
@@ -82,7 +86,21 @@ async def async_setup_entry(
                 ]
             )
 
-    entry.async_on_unload(coordinator.async_add_listener(async_check_new_lists))
+        # Handle deleted lists
+        deleted_list_ids = known_list_ids - current_list_ids
+        if deleted_list_ids:
+            ent_reg = er.async_get(hass)
+            for list_id in deleted_list_ids:
+                unique_id = f"listonic_{list_id}"
+                entity_id = ent_reg.async_get_entity_id(
+                    "todo", DOMAIN, unique_id
+                )
+                if entity_id:
+                    _LOGGER.debug("Removing entity for deleted list: %s", list_id)
+                    ent_reg.async_remove(entity_id)
+            known_list_ids.difference_update(deleted_list_ids)
+
+    entry.async_on_unload(coordinator.async_add_listener(async_check_lists))
 
 
 class ListonicTodoListEntity(
