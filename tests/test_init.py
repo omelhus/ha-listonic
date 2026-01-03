@@ -39,6 +39,11 @@ def mock_hass():
     hass.config_entries = MagicMock()
     hass.config_entries.async_forward_entry_setups = AsyncMock(return_value=True)
     hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+    hass.data = {}
+    hass.services = MagicMock()
+    hass.services.has_service = MagicMock(return_value=False)
+    hass.services.async_register = MagicMock()
+    hass.services.async_remove = MagicMock()
     return hass
 
 
@@ -215,6 +220,8 @@ class TestAsyncUnloadEntry:
     async def test_unload_entry_success(self, mock_hass, mock_config_entry):
         """Test successful unloading of the integration."""
         mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+        # Set up hass.data as it would be after setup
+        mock_hass.data[DOMAIN] = {mock_config_entry.entry_id: MagicMock()}
 
         result = await async_unload_entry(mock_hass, mock_config_entry)
 
@@ -222,15 +229,22 @@ class TestAsyncUnloadEntry:
         mock_hass.config_entries.async_unload_platforms.assert_called_once_with(
             mock_config_entry, PLATFORMS
         )
+        # Verify data and services were cleaned up
+        assert DOMAIN not in mock_hass.data
+        mock_hass.services.async_remove.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_unload_entry_failure(self, mock_hass, mock_config_entry):
         """Test failed unloading of the integration."""
         mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=False)
+        # Set up hass.data as it would be after setup
+        mock_hass.data[DOMAIN] = {mock_config_entry.entry_id: MagicMock()}
 
         result = await async_unload_entry(mock_hass, mock_config_entry)
 
         assert result is False
+        # Data should not be cleaned up on failure
+        assert DOMAIN in mock_hass.data
 
 
 class TestAsyncUpdateListener:

@@ -155,6 +155,11 @@ class ListonicTodoListEntity(
         )
 
     @property
+    def extra_state_attributes(self) -> dict[str, int]:
+        """Return extra state attributes."""
+        return {"list_id": self.list_id}
+
+    @property
     def todo_items(self) -> list[TodoItem] | None:
         """Return the todo items."""
         if not self._list:

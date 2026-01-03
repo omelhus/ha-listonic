@@ -128,3 +128,8 @@ class ListonicDataUpdateCoordinator(
         for item_id in item_ids:
             await self.client.delete_item(list_id, item_id)
         await self.async_request_refresh()
+
+    async def async_update_list(self, list_id: int, *, name: str) -> None:
+        """Update a list's name."""
+        await self.client.update_list(list_id, name=name)
+        await self.async_request_refresh()

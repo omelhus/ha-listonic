@@ -782,6 +782,49 @@ class ListonicApiClient:
 
         raise ListonicAuthError("Authentication failed after retry")
 
+    async def update_list(self, list_id: int, *, name: str) -> bool:
+        """Update a shopping list.
+
+        Args:
+            list_id: The ID of the list to update.
+            name: The new name for the list.
+
+        Returns:
+            True if the update succeeded.
+        """
+        await self._ensure_authenticated()
+
+        url = f"{API_BASE_URL}{API_LISTS_ENDPOINT}/{list_id}"
+        payload = {"Name": name}
+
+        for attempt in range(_MAX_AUTH_RETRIES + 1):
+            try:
+                response = await self._request(
+                    "PATCH", url, json=payload, headers=self._get_headers()
+                )
+                async with response:
+                    if response.status == 401:
+                        if attempt < _MAX_AUTH_RETRIES:
+                            if not await self._handle_auth_failure():
+                                raise ListonicAuthError(
+                                    "Authentication failed after retry"
+                                )
+                            continue
+                        raise ListonicAuthError("Authentication failed after retry")
+
+                    if response.status != 200:
+                        text = await response.text()
+                        raise ListonicApiError(
+                            f"Failed to update list: {response.status} - {text}"
+                        )
+
+                    return True
+
+            except aiohttp.ClientError as err:
+                raise ListonicApiError(f"Connection error: {err}") from err
+
+        raise ListonicAuthError("Authentication failed after retry")
+
     async def delete_list(self, list_id: int) -> bool:
         """Delete a shopping list."""
         await self._ensure_authenticated()

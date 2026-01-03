@@ -1,0 +1,20 @@
+rename_list:
+  name: Rename list
+  description: Rename a Listonic shopping list.
+  fields:
+    list_id:
+      name: List ID
+      description: The Listonic list ID (visible in entity attributes).
+      required: true
+      example: 198563329
+      selector:
+        number:
+          min: 1
+          mode: box
+    name:
+      name: Name
+      description: The new name for the list.
+      required: true
+      example: "Groceries"
+      selector:
+        text:

@@ -5,10 +5,12 @@ from __future__ import annotations
 import logging
 from datetime import timedelta
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.const import ATTR_NAME, Platform
+from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import ListonicApiClient, ListonicAuthError
@@ -26,6 +28,16 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS: list[Platform] = [Platform.TODO]
 
 type ListonicConfigEntry = ConfigEntry[ListonicDataUpdateCoordinator]
+
+ATTR_LIST_ID = "list_id"
+SERVICE_RENAME_LIST = "rename_list"
+
+SERVICE_RENAME_LIST_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_LIST_ID): cv.positive_int,
+        vol.Required(ATTR_NAME): cv.string,
+    }
+)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ListonicConfigEntry) -> bool:
@@ -59,8 +71,35 @@ async def async_setup_entry(hass: HomeAssistant, entry: ListonicConfigEntry) -> 
 
     entry.runtime_data = coordinator
 
+    # Store coordinator in hass.data for service access
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
     # Register options update listener
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+
+    # Register services (only once)
+    if not hass.services.has_service(DOMAIN, SERVICE_RENAME_LIST):
+        async def async_rename_list(call: ServiceCall) -> None:
+            """Handle rename list service call."""
+            list_id = call.data[ATTR_LIST_ID]
+            name = call.data[ATTR_NAME]
+
+            # Find the coordinator that has this list
+            for coordinator in hass.data[DOMAIN].values():
+                if not isinstance(coordinator, ListonicDataUpdateCoordinator):
+                    continue
+                if list_id in coordinator.data:
+                    await coordinator.async_update_list(list_id, name=name)
+                    return
+
+            _LOGGER.error("List %s not found in any Listonic account", list_id)
+
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_RENAME_LIST,
+            async_rename_list,
+            schema=SERVICE_RENAME_LIST_SCHEMA,
+        )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -79,4 +118,14 @@ async def _async_update_listener(
 
 async def async_unload_entry(hass: HomeAssistant, entry: ListonicConfigEntry) -> bool:
     """Unload a config entry."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
+
+        # Remove services if this was the last entry
+        if not hass.data[DOMAIN]:
+            hass.data.pop(DOMAIN)
+            hass.services.async_remove(DOMAIN, SERVICE_RENAME_LIST)
+
+    return unload_ok
