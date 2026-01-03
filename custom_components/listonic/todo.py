@@ -73,6 +73,10 @@ async def async_setup_entry(
     @callback
     def async_check_lists() -> None:
         """Check for new and deleted lists."""
+        if not coordinator.data:
+            # Don't process if coordinator data is empty/None - likely a temporary issue
+            return
+
         current_list_ids = set(coordinator.data.keys())
 
         # Handle new lists
@@ -86,9 +90,10 @@ async def async_setup_entry(
                 ]
             )
 
-        # Handle deleted lists
+        # Handle deleted lists - only if we still have some lists
+        # This prevents mass deletion if API temporarily returns empty
         deleted_list_ids = known_list_ids - current_list_ids
-        if deleted_list_ids:
+        if deleted_list_ids and current_list_ids:
             ent_reg = er.async_get(hass)
             for list_id in deleted_list_ids:
                 unique_id = f"listonic_{list_id}"
