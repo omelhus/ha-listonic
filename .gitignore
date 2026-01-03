@@ -51,7 +51,6 @@ Thumbs.db
 
 # UV
 .uv/
-uv.lock
 
 # Home Assistant
 *.log
