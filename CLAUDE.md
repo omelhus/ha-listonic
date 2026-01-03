@@ -63,3 +63,28 @@ This integration uses the `todo` platform to expose shopping lists as todo entit
 - Use conventional commits
 - Keep tests passing
 - Follow Home Assistant coding standards
+- Always use `uv` to run Python commands - never use `python` or `pip` directly
+
+## Python Environment
+Always use `uv` for all Python operations:
+```bash
+# Run Python scripts
+uv run python script.py
+
+# Run pytest
+uv run pytest tests/
+
+# Run linting
+uv run ruff check .
+
+# Run type checking
+uv run mypy custom_components/listonic
+
+# Install dependencies
+uv sync --all-extras
+
+# Add a dependency
+uv add package-name
+```
+
+Never use bare `python`, `pip`, or `pytest` commands - always prefix with `uv run`.
