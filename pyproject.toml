@@ -1,6 +1,6 @@
 [project]
 name = "listonic-ha"
-version = "0.1.0"
+version = "0.2.0"
 description = "Home Assistant custom component for Listonic shopping lists"
 readme = "README.md"
 requires-python = ">=3.12"

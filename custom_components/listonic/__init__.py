@@ -8,7 +8,7 @@ from datetime import timedelta
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import ListonicApiClient, ListonicAuthError
@@ -50,7 +50,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ListonicConfigEntry) -> 
     coordinator = ListonicDataUpdateCoordinator(
         hass, client, entry, scan_interval=scan_interval
     )
-    await coordinator.async_config_entry_first_refresh()
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except ConfigEntryAuthFailed:
+        raise  # Re-raise auth errors as-is
+    except Exception as err:
+        raise ConfigEntryNotReady(f"Failed to fetch initial data: {err}") from err
 
     entry.runtime_data = coordinator
 

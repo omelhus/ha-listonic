@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import logging
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -26,6 +27,9 @@ _CLIENT_AUTH = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode(
 
 # Maximum number of authentication retries for 401 responses
 _MAX_AUTH_RETRIES = 1
+
+# Request timeout configuration
+_REQUEST_TIMEOUT = 30  # seconds
 
 # Rate limiting configuration
 _MAX_CONCURRENT_REQUESTS = 10  # Maximum concurrent requests
@@ -179,12 +183,12 @@ class ListonicApiClient:
     async def _wait_for_rate_limit(self) -> None:
         """Wait to ensure minimum interval between requests."""
         async with self._rate_limit_lock:
-            now = asyncio.get_event_loop().time()
+            now = time.monotonic()
             elapsed = now - self._last_request_time
             wait_time = _MIN_REQUEST_INTERVAL - elapsed
             if wait_time > 0:
                 await asyncio.sleep(wait_time)
-            self._last_request_time = asyncio.get_event_loop().time()
+            self._last_request_time = time.monotonic()
 
     async def _request(
         self,
@@ -216,6 +220,7 @@ class ListonicApiClient:
             ListonicApiError: On server errors after retries exhausted.
         """
         session = await self._get_session()
+        timeout = aiohttp.ClientTimeout(total=_REQUEST_TIMEOUT)
 
         for attempt in range(_MAX_BACKOFF_RETRIES):
             # Apply rate limiting unless skipped
@@ -229,6 +234,7 @@ class ListonicApiClient:
                         params=params,
                         json=json,
                         data=data,
+                        timeout=timeout,
                     )
             else:
                 response = await session.request(
@@ -238,6 +244,7 @@ class ListonicApiClient:
                     params=params,
                     json=json,
                     data=data,
+                    timeout=timeout,
                 )
 
             # Check for rate limiting (429)
