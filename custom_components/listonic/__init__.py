@@ -10,7 +10,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import ListonicApiClient
-from .const import CONF_EMAIL, CONF_PASSWORD, DOMAIN
+from .const import CONF_EMAIL, CONF_PASSWORD
+from .const import DOMAIN as DOMAIN
 from .coordinator import ListonicDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)

@@ -20,7 +20,9 @@ from pathlib import Path
 import requests
 
 WEBAPP_URL = "https://app.listonic.com"
-CONST_FILE = Path(__file__).parent.parent / "custom_components" / "listonic" / "const.py"
+CONST_FILE = (
+    Path(__file__).parent.parent / "custom_components" / "listonic" / "const.py"
+)
 
 
 def get_app_js_url() -> str | None:
@@ -121,7 +123,8 @@ def main() -> int:
 
     # Get current credentials
     current_credentials = get_current_credentials()
-    print(f"Current credentials: client_id={current_credentials.get('client_id', 'NOT FOUND')}")
+    client_id = current_credentials.get("client_id", "NOT FOUND")
+    print(f"Current credentials: client_id={client_id}")
 
     # Compare
     if new_credentials == current_credentials:
@@ -130,9 +133,13 @@ def main() -> int:
 
     # Update
     print("Credentials changed! Updating const.py...")
-    print(f"  client_id: {current_credentials.get('client_id')} -> {new_credentials['client_id']}")
+    old_id = current_credentials.get("client_id")
+    new_id = new_credentials["client_id"]
+    print(f"  client_id: {old_id} -> {new_id}")
     print(f"  client_secret: {'*' * 8} -> {'*' * 8}")
-    print(f"  redirect_uri: {current_credentials.get('redirect_uri')} -> {new_credentials['redirect_uri']}")
+    old_uri = current_credentials.get("redirect_uri")
+    new_uri = new_credentials["redirect_uri"]
+    print(f"  redirect_uri: {old_uri} -> {new_uri}")
 
     update_credentials(new_credentials)
     print("Updated const.py")

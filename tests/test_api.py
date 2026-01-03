@@ -3,19 +3,16 @@
 from __future__ import annotations
 
 import re
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from aioresponses import aioresponses
 
 from custom_components.listonic.api import (
     ListonicApiClient,
-    ListonicApiError,
     ListonicAuthError,
     ListonicItem,
     ListonicList,
 )
-from custom_components.listonic.const import API_BASE_URL
 
 # Regex patterns for URL matching
 LOGIN_URL_PATTERN = re.compile(r"^https://api\.listonic\.com/api/loginextended.*$")

@@ -3,14 +3,10 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 from dotenv import load_dotenv
-
-if TYPE_CHECKING:
-    from custom_components.listonic.api import ListonicApiClient
 
 # Load environment variables from .env file
 load_dotenv()

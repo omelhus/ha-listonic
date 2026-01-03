@@ -144,6 +144,8 @@ class ListonicTodoListEntity(
 
     async def async_create_todo_item(self, item: TodoItem) -> None:
         """Create a new todo item."""
+        if not item.summary:
+            return
         await self.coordinator.async_add_item(
             self.list_id,
             item.summary,
